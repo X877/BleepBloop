@@ -1,0 +1,252 @@
+<!doctype html>
+
+<html ng-app="bleepbloopApp">
+   
+    <head>
+        <script src = "https://ajax.googleapis.com/ajax/libs/angularjs/1.5.6/angular.min.js"></script>
+        <script src = "https://ajax.googleapis.com/ajax/libs/angularjs/1.5.6/angular-animate.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/3.3.0/firebase.js"></script>
+        <script src="https://cdn.firebase.com/libs/angularfire/2.0.2/angularfire.min.js"></script>
+        <script src="Utility.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.0.0/howler.js"></script>
+        <script src="main.js"></script>
+        <script src="chat.js"></script>
+        <script src="editor.js"></script>
+
+        <link rel="stylesheet" type="text/css" href="bbloopstyle.css">
+
+    </head>
+   
+    <body ng-controller = "MainCtrl" background="bbloop_background.png">
+
+        <!-- MAIN BANNER -->
+        <div id="header">
+            <h2 align="center">Bleep Bloop</h2>
+        </div>
+
+        <!--START MENU -->
+        <div id="startMenu" ng-show="currentView == 'startMenu'"  align="center">
+            <div id="descBox"><h3><b>*What is Bleep Bloop?*</b></h3>
+
+            <p>
+            Bleep Bloop is a simple, intuitive music production tool.
+            This tool will allow you to collaborate in real-time over the internet to create different  
+            musical sounds, beats and styles by mixing-and-matching different sounds and instruments.
+            </p>
+
+            <h3><b>*Interesting, where do I start?*</b></h3>
+
+            <p>
+            Curious? Try now by clicking random tune button. You will be given a room code and you can input your own username.
+            </p>
+
+            <p>
+            If you want to join private room, click private tune button and enter the code given by the other user and input your username or simply create your own private room.
+            </p>
+            </div>
+
+            <br>
+
+            <div class="button-container">
+                <button class="button buttonBlue" id="btn-new-tune" ng-click = "newTune()" href="#">Random tune</button>
+                <button class="button buttonRed" id="btn-join-tune" ng-click = "currentView = 'join'" href="#">Private tune</button>
+            </div>
+
+        </div>
+     
+         <!-- CREATE TUNE PAGE -->
+        <div id="create" ng-show="currentView == 'create'" align="center">
+            <div> Enter your username: <br> 
+                <p class="floatText"> {{username}} </p>
+                <input ng-model="username" placeholder = "Enter your name"></input>
+            </div>
+
+                <br>
+                <br>
+
+            <div class="button-container">
+                <button class="button buttonBlue" ng-click = "createTune()">Create</button>
+                <button class="button buttonRed" ng-click = "back()">Back</button>
+            </div>
+
+        </div>
+     
+
+        <!-- JOIN TUNE PAGE -->
+        <div id="join" ng-show="currentView == 'join'" align="center">
+            <div> 
+                Enter access code: 
+                <br>
+                <p class="floatText"> {{accessCode}} </p>
+                <input ng-model="accessCode" placeholder = "Enter access code"></input>
+
+                <br>
+                <br>
+
+                Enter your username: 
+                <br> 
+                <p class="floatText"> {{username}} </p>
+                <input ng-model="username" placeholder = "Enter your name"></input>
+
+            </div>
+
+            <br>
+
+            <div class="button-container">
+                <button class="button buttonBlue" ng-click = "joinTune()">Join</button>
+                <button class="button buttonRed" ng-click = "back()">Back</button>
+            </div>
+
+        </div>
+
+
+        <!-- MAIN EDITOR PAGE -->
+        <div id="tuneEditor" ng-show="currentView == 'tuneEditor'" align="center">
+            <div id="infoBox">
+                <p>Access code: <br><b> {{accessCode}} </b>
+                <br>Your username: <br><b> {{username}} </b></p>
+            </div>
+
+            <br>
+
+            <div ng-controller="EditorCtrl" ng-mouseup = "offclick()">
+             
+                <button class="button buttonBlue" ng-click="randomGrid();">Random</button>
+                <button class="button buttonRed" ng-click="clearGrid();">Clear</button>
+
+                <br>
+                <br>
+
+                Play/pause
+                <input type="checkbox" ng-model="playing">
+
+                <br>
+                <br>
+         
+                <!-- MUSIC GRID -->
+                <table>
+                    <tr ng-repeat="row in data track by $index">
+                        <td ng-repeat="col in row track by $index" ng-style="getCellStyle($index, $parent.$index)"
+                            ng-mouseover = "toggle($index, $parent.$index)" 
+                            ng-mousedown = "onclick($index, $parent.$index)" class="mainTile">
+                        </td>
+                    </tr>
+                </table>
+         
+                <!-- Floating 'LOADING' message -->
+                <div style = "position:relative; top:-240px; color:white" ng-show = "loading"> LOADING </div>
+
+                <!-- SAVE AND LOAD BUTTONS -->
+                <div id="saveAndLoad">
+                    <button class="button buttonBlue" ng-click="saveSample();">Save Sample</button>
+                    <button class="button buttonRed" ng-click="loadSample();">Load Sample</button>
+                </div>
+
+                <br>
+
+                <!-- CONTROL BOX -->
+                <div id="ctrlBox" class="some controls">
+                    Loop length <input  type="number" 
+                                        ng-model="width"
+                                        min = "1"
+                                        max = "16"
+                                        ng-change="updateDims()"
+                                        size="4">
+                    &nbsp; BPM <input type="number" ng-model="bpm" ng-change = "setBPM()" size="4">
+
+                    <br>
+                    <br>
+
+                    Volume <input   type="range"
+                                    ng-model="volume"
+                                    min="0.0"
+                                    max="1.0"
+                                    step="0.01"
+                                    ng-change="setVolume()"  >
+                   <!-- <input type="number" ng-model="height" ng-change="updateDims()"> -->
+                    <br>
+                    <br>
+                        
+                    Instrument
+                
+                    <select ng-init="instrument = instrument || 'pluck'" 
+                            ng-model="instrument"
+                            ng-change="updateSounds()">
+                        <option value="triangle">Triangular wave</option>
+                        <option value="square">Square wave</option>
+                        <option value="trapezium">Trapezium wave</option>
+                        <option value="pluck">Guitar</option>
+                        <option value="sawtooth">Sawtooth wave</option>
+                    </select>
+                 
+                    Scale
+                
+                    <select ng-init="scale = scale || 'harmonic'" 
+                            ng-model="scale"
+                            ng-change="updateSounds()">
+                        <option value="harmonic">Harmonic</option>
+                        <option value="pentatonic">Pentatonic</option>
+                        <option value="chromatic">Chromatic</option>
+                    </select>
+
+                </div>
+
+            </div>
+
+            <br>     
+
+            <button class="button buttonLeave" ng-click="back();">Leave Room</button>
+
+            <!-- CHAT BOX -->
+            <div id="chatBox" ng-controller="ChatCtrl">
+                <hr>
+                <strong>CHAT</strong>
+
+                <div ng-repeat="(id, message) in messages">
+                    <p class="chatName"><strong> &nbsp; {{ message.author }} &nbsp; ({{ message.date }})</strong></p>
+                    <p class="chatText"> {{ message.content }} </p>
+                </div>
+
+                <form ng-submit="submitMessage()">
+                    <input ng-model="inputMessage" placeholder="Your message" size="80"></input>
+                    <br>
+                    <br>
+                    <button class="Button buttonBlue" type="submit">Submit</button>
+                </form>
+
+                <br>
+
+            </div>
+
+        </div>
+
+        <!-- HISTORY PAGE -->
+        <div id="history" ng-show="currentView == 'history'" align="center">
+            <div class = "right">
+                <h1 align="center">History</h1>
+
+
+                <div class="Tile" data-role="tile">
+                    <h3>History stuff here</h3>
+                </div>
+            </div>
+
+            <table>
+                <tr ng-repeat="row in data track by $index">
+                    <td ng-repeat="col in row track by $index" ng-style="getCellStyle($index, $parent.$index)"
+                        ng-mouseover = "toggle($index, $parent.$index)"
+                        ng-mousedown = "onclick($index, $parent.$index)" class="mainTile">
+                    </td>
+                </tr>
+            </table>
+
+
+
+            <div class="button-container">
+                <button class="button button2" ng-click = "joinTune()">Back</button>
+            </div>
+
+        </div>
+
+    </body>
+</html>

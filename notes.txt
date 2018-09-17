@@ -1,0 +1,8 @@
+just space to write ideas down
+
+How it should work for user
+1. go to bleepbloop.com or whatever
+2. click 'new', you get a code eg 'vkgpsk'
+2a. email code to your friend
+3. friend goes to bleepbloop, clicks 'join', types in code
+4. you guys make music together
