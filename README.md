@@ -2,6 +2,4 @@
 bleep bleep bloop
 
 ***
-live @ [darwinvickers.github.io/bleepbloop](https://darwinvickers.github.io/bleepbloop)
-
-gh-pages is the web-facing branch
+Reupload of COMP4920 music synthetizer apps (no longer working because database for music files has expired)
